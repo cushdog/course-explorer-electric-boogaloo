@@ -29,7 +29,6 @@ export default function SearchPage() {
       console.log("All configurations tried, course not found");
       return;
     }
-
     
     searchQuery = searchQuery.replace(/([a-zA-Z])(\d)/, '$1 $2');
 
@@ -43,10 +42,7 @@ export default function SearchPage() {
         if (returned_data === "Course not found") {
           fetchCoursesNoDate(searchQuery, configIndex + 1);
         } else {
-          console.log(returned_data)
-          sessionStorage.setItem('myKey', 'myValue');
           sessionStorage.setItem('classData', JSON.stringify(returned_data));
-          console.log('Data fetched successfully:', returned_data); // Added logging
           router.push('/class');
         }
       })
@@ -91,35 +87,35 @@ export default function SearchPage() {
   ];
 
   return (
-<div className="flex justify-center items-center h-screen">
-  <div className="w-full max-w-2xl p-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
-    <div className="col-span-4">
-      <Input placeholder="Search for a class..." value={search} onChange={handleInputChange} />
+    <div className="flex justify-center items-center h-screen">
+      <div className="w-full max-w-2xl p-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div className="col-span-4">
+          <Input placeholder="Search for a class..." value={search} onChange={handleInputChange} />
+        </div>
+        <div className="col-span-2 sm:col-span-2">
+          <AdjustedSelect
+            onChange={setSelectedSemester}
+            selectedValue={selectedSemester}
+            item_to_select="Select a semester"
+            options={semester_options}
+          />
+        </div>
+        <div className="col-span-2 sm:col-span-2">
+          <AdjustedSelect
+            onChange={setSelectedYear}
+            selectedValue={selectedYear}
+            item_to_select="Select a year"
+            options={year_options}
+          />
+        </div>
+        <div className="col-span-4 flex justify-center">
+          <Button onClick={conditionalSearch}>Search</Button>
+        </div>
+        <div className="col-span-4 flex justify-center">
+          <AdjustedDropDown />
+        </div>
+      </div>
     </div>
-    <div className="col-span-2 sm:col-span-2">
-      <AdjustedSelect
-        onChange={setSelectedSemester}
-        selectedValue={selectedSemester}
-        item_to_select="Select a semester"
-        options={semester_options}
-      />
-    </div>
-    <div className="col-span-2 sm:col-span-2">
-      <AdjustedSelect
-        onChange={setSelectedYear}
-        selectedValue={selectedYear}
-        item_to_select="Select a year"
-        options={year_options}
-      />
-    </div>
-    <div className="col-span-4 flex justify-center">
-      <Button onClick={conditionalSearch}>Search</Button>
-    </div>
-    <div className="col-span-4 flex justify-center">
-      <AdjustedDropDown />
-    </div>
-  </div>
-</div>
 
   );
 }
