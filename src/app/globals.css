@@ -67,3 +67,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+:root {
+  --custom-bg-color: #ceeaf7; /* Define your custom color here */
+}
+
+body {
+  background-color: var(--custom-bg-color);;
+}

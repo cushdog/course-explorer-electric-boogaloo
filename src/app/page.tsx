@@ -91,12 +91,24 @@ export default function SearchPage() {
   ];
 
   return (
-    <>
-      <Input placeholder="Search for a class..." value={search} onChange={handleInputChange} />
-      <AdjustedSelect onChange={setSelectedSemester} selectedValue={selectedSemester} item_to_select="Select a semester" options={semester_options} />
-      <AdjustedSelect onChange={setSelectedYear} selectedValue={selectedYear} item_to_select="Select a year" options={year_options} />
-      <Button onClick={conditionalSearch}>Search</Button>
-      <AdjustedDropDown />
-    </>
+    <div className="flex justify-center items-center h-screen">
+      <div className="w-1/2 max-w-2xl p-4 grid grid-cols-4 gap-4">
+        <div className="col-span-4">
+          <Input placeholder="Search for a class..." value={search} onChange={handleInputChange} />
+        </div>
+        <div className="col-span-2">
+          <AdjustedSelect onChange={setSelectedSemester} selectedValue={selectedSemester} item_to_select="Select a semester" options={semester_options} />
+        </div>
+        <div className="col-span-2">
+          <AdjustedSelect onChange={setSelectedYear} selectedValue={selectedYear} item_to_select="Select a year" options={year_options} />
+        </div>
+        <div className="col-span-4 flex justify-center">
+          <Button onClick={conditionalSearch}>Search</Button>
+        </div>
+        <div className="col-span-4 flex justify-center">
+          <AdjustedDropDown />
+        </div>
+      </div>
+    </div>
   );
 }
