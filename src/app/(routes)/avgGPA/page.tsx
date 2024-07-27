@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
-export default function avgGPA() {
+export default function AvgGPA() {
 
   const router = useRouter();
   

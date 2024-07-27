@@ -27,7 +27,7 @@ export function AdjustedSelect({ item_to_select, options, selectedValue, onChang
         <SelectGroup>
           <SelectLabel>Options</SelectLabel>
           {options.map((option) => (
-            <SelectItem value = {option.value}>
+            <SelectItem key={option.label} value = {option.value}>
                 {option.label}
             </SelectItem>
           ))}
