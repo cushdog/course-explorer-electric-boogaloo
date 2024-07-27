@@ -13,11 +13,13 @@ import {
 interface SelectDemoProps {
     item_to_select: string;
     options: {value: string, label: string}[];
+    selectedValue: string;
+    onChange: (value: string) => void;
 }
 
-export function AdjustedSelect({ item_to_select, options } : SelectDemoProps) {
+export function AdjustedSelect({ item_to_select, options, selectedValue, onChange } : SelectDemoProps) {
   return (
-    <Select>
+    <Select value={selectedValue} onValueChange={onChange}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder={item_to_select} />
       </SelectTrigger>
