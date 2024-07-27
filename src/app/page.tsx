@@ -13,22 +13,42 @@ export default function SearchPage() {
   const [selectedSemester, setSelectedSemester] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
 
+  const semesterConfigs = [
+    { semester: "Spring", year: "2024" },
+    { semester: "Fall", year: "2023" },
+    { semester: "Spring", year: "2023" },
+    { semester: "Fall", year: "2022" },
+  ];
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value.toUpperCase());
   }
 
-  const fetchCoursesNoDate = (searchQuery: string) => {
-    let new_sem = "Spring";
-    let new_year = "2024";
-    const modified_search = `${searchQuery} ${new_sem} ${new_year}`;
+  const fetchCoursesNoDate = (searchQuery: string, configIndex: number = 0) => {
+    if (configIndex >= semesterConfigs.length) {
+      console.log("All configurations tried, course not found");
+      return;
+    }
+
+    
+    searchQuery = searchQuery.replace(/([a-zA-Z])(\d)/, '$1 $2');
+
+    const { semester, year } = semesterConfigs[configIndex];
+    const modified_search = `${searchQuery} ${semester} ${year}`;
     console.log(`Fetching without date: ${modified_search}`); // Added logging
+
     fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
       .then(response => response.json())
       .then(returned_data => {
-        sessionStorage.setItem('myKey', 'myValue');
-        sessionStorage.setItem('classData', JSON.stringify(returned_data));
-        console.log('Data fetched successfully:', returned_data); // Added logging
-        router.push('/class');
+        if (returned_data === "Course not found") {
+          fetchCoursesNoDate(searchQuery, configIndex + 1);
+        } else {
+          console.log(returned_data)
+          sessionStorage.setItem('myKey', 'myValue');
+          sessionStorage.setItem('classData', JSON.stringify(returned_data));
+          console.log('Data fetched successfully:', returned_data); // Added logging
+          router.push('/class');
+        }
       })
       .catch(error => console.error('Error fetching data:', error)); // Added error handling
   }
@@ -73,10 +93,10 @@ export default function SearchPage() {
   return (
     <>
       <Input placeholder="Search for a class..." value={search} onChange={handleInputChange} />
-      <AdjustedDropDown />
       <AdjustedSelect onChange={setSelectedSemester} selectedValue={selectedSemester} item_to_select="Select a semester" options={semester_options} />
       <AdjustedSelect onChange={setSelectedYear} selectedValue={selectedYear} item_to_select="Select a year" options={year_options} />
       <Button onClick={conditionalSearch}>Search</Button>
+      <AdjustedDropDown />
     </>
   );
 }
