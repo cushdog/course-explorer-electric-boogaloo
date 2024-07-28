@@ -4,8 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import AdjustedSelect from "../../../../components/ui/adjusted_select";
-import AdjustedDropDown from "../../../../components/ui/adjusted_dropdown";
 
 export default function PreReqs() {
 
