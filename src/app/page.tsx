@@ -35,7 +35,7 @@ export default function SearchPage() {
     const { semester, year } = semesterConfigs[configIndex];
     const modified_search = `${searchQuery} ${semester} ${year}`;
     console.log(`Fetching without date: ${modified_search}`); // Added logging
-
+    
     fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
       .then(response => response.json())
       .then(returned_data => {
