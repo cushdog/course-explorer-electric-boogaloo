@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
 
-const ClassPage = () => {
+const ClassContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const classParam = searchParams.get('class');
@@ -120,15 +120,12 @@ const ClassPage = () => {
 
   const handleFileDownload = async (key: string, filename: string) => {
     try {
-      // Extract just the key part from the full URL
-      const keyPart = key.split('.com/')[1];
-      const response = await fetch(`/api/getPresignedUrl?key=${encodeURIComponent(keyPart)}`);
+      const response = await fetch(`/api/getPresignedUrl?key=${encodeURIComponent(key)}`);
       if (!response.ok) {
         throw new Error('Failed to get presigned URL');
       }
       const { url } = await response.json();
       
-      // Use the presigned URL to download the file
       window.open(url, '_blank');
     } catch (error) {
       console.error('Error downloading file:', error);
@@ -168,12 +165,20 @@ const ClassPage = () => {
             <li key={file.key} className="flex items-center space-x-2">
               <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{file.key.split('/').pop()}</a>
               <Button onClick={() => handleFileDelete(file.key)} className="bg-red-500 hover:bg-red-600 text-white">Delete</Button>
-              <Button onClick={() => handleFileDownload(file.url, file.key.split('/').pop() || 'download')} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
+              <Button onClick={() => handleFileDownload(file.key, file.key.split('/').pop() || 'download')} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
             </li>
           ))}
         </ul>
       </div>
     </div>
+  );
+};
+
+const ClassPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ClassContent />
+    </Suspense>
   );
 };
 
