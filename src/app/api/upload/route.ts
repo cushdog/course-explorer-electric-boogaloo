@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import s3 from '@/lib/aws';
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import s3Client from '@/lib/aws';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +20,13 @@ export async function POST(request: NextRequest) {
       ContentType: file.type || 'application/octet-stream',
     };
 
-    const data = await s3.upload(params).promise();
-    return NextResponse.json({ url: data.Location });
+    const command = new PutObjectCommand(params);
+    const data = await s3Client.send(command);
+
+    // Construct the URL manually since PutObjectCommand doesn't return a Location
+    const url = `https://${params.Bucket}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${params.Key}`;
+
+    return NextResponse.json({ url });
   } catch (error) {
     console.error('Error uploading file:', error);
     return NextResponse.json({ error: 'Error uploading file' }, { status: 500 });
