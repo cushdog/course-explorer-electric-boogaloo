@@ -32,15 +32,17 @@ export default function PrereqGraph() {
       try {
         const parsed = parseCourse(prereqData);
         setParsedCourse(parsed);
-        const generatedPaths = generatePaths(parsed);
-        setPaths(generatedPaths);
-        const graph = transformToGraphData(generatedPaths);
-        setGraphData(graph);
+        generatePaths(parsed.code, [], [], new Set()).then(generatedPaths => {
+          setPaths(generatedPaths);
+          const graph = transformToGraphData(generatedPaths);
+          setGraphData(graph);
+        });
       } catch (error) {
         console.error("Error in useEffect:", error);
       }
     }
   }, [prereqData]);
+  
 
   const handleBack = () => {
     router.push('/prereqs');
@@ -53,46 +55,78 @@ export default function PrereqGraph() {
     return { code, prerequisites };
   };
 
-  const parsePrerequisites = (description: string): CoursePrerequisites => {
+  const parsePrerequisites = (description: string): string[][] => {
     const prereqMatch = description.match(/Prerequisite:\s*(.*?)(?=\.\s|$)/);
     if (!prereqMatch) return [];
-
+  
     const prerequisitesText = prereqMatch[1];
     return prerequisitesText.split(';').map(group => {
-      const trimmed = group.trim();
+      const trimmed = group.trim().replace(/^[.,\s]+|[.,\s]+$/g, ''); // Remove unnecessary punctuation
       if (/^one of/i.test(trimmed)) {
         return trimmed
           .replace(/^one of/i, '')
           .split(/,|\bor\b/i)
-          .map(option => option.trim())
+          .map(option => option.trim().replace(/^[.,\s]+|[.,\s]+$/g, '')) // Remove unnecessary punctuation
           .filter(s => /^[A-Z]+\s+\d+$/.test(s));
       } else if (/\bor\b/i.test(trimmed)) {
         return trimmed
           .split(/\bor\b/i)
-          .map(option => option.trim());
+          .map(option => option.trim().replace(/^[.,\s]+|[.,\s]+$/g, '')) // Remove unnecessary punctuation
+          .filter(s => /^[A-Z]+\s+\d+$/.test(s));
       } else {
-        return [trimmed.split(',').join(' ')];
+        return trimmed.split(',').map(s => s.trim().replace(/^[.,\s]+|[.,\s]+$/g, '')).filter(s => /^[A-Z]+\s+\d+$/.test(s)); // Remove unnecessary punctuation
       }
     }).filter(group => group.length > 0);
   };
+  
+  
 
-  const generateCombinations = (groups: CoursePrerequisites): string[][] => {
-    const result: string[][] = [[]];
-    for (const group of groups) {
-      const newResult: string[][] = [];
-      for (const option of group) {
-        for (const combo of result) {
-          newResult.push([...combo, option]);
-        }
-      }
-      result.splice(0, result.length, ...newResult);
+  const fetchCoursePrerequisites = async (courseCode: string): Promise<CoursePrerequisites> => {
+    const response = await fetch(`/api/coursePrerequisites?courseCode=${courseCode}`);
+    const data = await response.json();
+    console.log("Data: ", data)
+    if (data.prerequisites) {
+      return data.prerequisites.filter((group: PrerequisiteGroup) => group.some(course => /^[A-Z]+\s+\d+$/.test(course)));
+    } else {
+      console.error(`Failed to fetch prerequisites for ${courseCode}: ${data.error}`);
+      return [];
     }
-    return result;
   };
 
-  const generatePaths = (course: ParsedCourse): string[][] => {
-    const combinations = generateCombinations(course.prerequisites);
-    return combinations.map(combo => [...combo, course.code]);
+  const generatePaths = async (courseCode: string, currentPath: string[], allPaths: string[][], visited: Set<string> = new Set()): Promise<string[][]> => {
+    console.log(`Generating paths for: ${courseCode}`); // Logging
+  
+    // Check if the course has already been visited in the current path to prevent cycles
+    if (visited.has(courseCode)) {
+      console.log(`Cycle detected, skipping course: ${courseCode}`); // Logging
+      return allPaths;
+    }
+  
+    // Add the course to the visited set
+    visited.add(courseCode);
+  
+    const prerequisites = await fetchCoursePrerequisites(courseCode);
+  
+    console.log(prerequisites); // Logging
+    
+    if (prerequisites.length === 0 || prerequisites.every(group => group.every(prereq => !/^[A-Z]+\s+\d+$/.test(prereq)))) {
+      allPaths.push([courseCode, ...currentPath]);
+      console.log(`No more prerequisites for: ${courseCode}. Current path: ${[courseCode, ...currentPath]}`); // Logging
+      return allPaths;
+    }
+    
+    for (const group of prerequisites) {
+      for (const prereq of group) {
+        if (/^[A-Z]+\s+\d+$/.test(prereq)) {
+          console.log(`Recursively exploring: ${prereq}`); // Logging
+          await generatePaths(prereq, [courseCode, ...currentPath], allPaths, new Set(visited)); // Pass a copy of the visited set
+        } else {
+          console.log(`Skipping non-course prerequisite: ${prereq}`); // Logging
+        }
+      }
+    }
+    
+    return allPaths;
   };
 
   const transformToGraphData = (paths: string[][]) => {
