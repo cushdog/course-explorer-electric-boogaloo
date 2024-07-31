@@ -118,14 +118,13 @@ const ClassContent = () => {
     }
   };
 
-  const handleFileDownload = async (key: string, filename: string) => {
+  const handleFileDownload = async (key: string) => {
     try {
       const response = await fetch(`/api/getPresignedUrl?key=${encodeURIComponent(key)}`);
       if (!response.ok) {
         throw new Error('Failed to get presigned URL');
       }
       const { url } = await response.json();
-      
       window.open(url, '_blank');
     } catch (error) {
       console.error('Error downloading file:', error);
@@ -163,7 +162,7 @@ const ClassContent = () => {
         <ul className="space-y-2">
           {files.map((file) => (
             <li key={file.key} className="flex items-center space-x-2">
-              <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{file.key.split('/').pop()}</a>
+              <Button onClick={() => handleFileDownload(file.key)} className="text-blue-600 hover:underline">{file.key.split('/').pop()}</Button>
               <Button onClick={() => handleFileDelete(file.key)} className="bg-red-500 hover:bg-red-600 text-white">Delete</Button>
               <Button onClick={() => handleFileDownload(file.key, file.key.split('/').pop() || 'download')} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
             </li>
