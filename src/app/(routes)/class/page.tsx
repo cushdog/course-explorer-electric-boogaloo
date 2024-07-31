@@ -1,95 +1,178 @@
 'use client';
+
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import axios from 'axios';
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
 
-interface Section {
-  id: number;
-  courseNumber: string;
-  subject: string;
-  courseTitle: string;
-  seatsAvailable: number;
-  maximumEnrollment: number;
-  enrollment: number;
-}
-
 const ClassPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const classParam = searchParams.get('class');
   const [classData, setClassData] = useState<ClassDataType | ClassDataListType | null>(null);
-  // const [sectionsInfo, setSections] = useState([]);
+  const [files, setFiles] = useState<{ key: string; url: string }[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const semesterConfigs = [
+    { semester: 'Spring', year: '2024' },
+    { semester: 'Fall', year: '2023' },
+    { semester: 'Spring', year: '2023' },
+    { semester: 'Fall', year: '2022' },
+  ];
 
   useEffect(() => {
-    const data = JSON.parse(sessionStorage.getItem('classData') as string) as ClassDataType | ClassDataListType;
-    // console.log(data.length);
-    setClassData(data);
-  }, []);
-
-  useEffect(() => {
-    if (classData !== null) {
-      // fetchClassData();
-      sessionStorage.removeItem('classData');
+    if (classParam) {
+      fetchClassDataWithDates(classParam);
+      fetchFiles(classParam);
     }
-  }, [classData]);
+  }, [classParam]);
+
+  const fetchClassDataWithDates = (classQuery: string, configIndex: number = 0) => {
+    if (configIndex >= semesterConfigs.length) {
+      console.log('All configurations tried, course not found');
+      return;
+    }
+
+    const { semester, year } = semesterConfigs[configIndex];
+    const modified_search = `${classQuery} ${semester} ${year}`;
+
+    fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data === 'Course not found') {
+          fetchClassDataWithDates(classQuery, configIndex + 1);
+        } else {
+          setClassData(data);
+        }
+      })
+      .catch((error) => console.error('Error fetching class data:', error));
+  };
+
+  const fetchFiles = async (classParam: string) => {
+    try {
+      const response = await fetch(`/api/files?classParam=${classParam}`);
+      const data = await response.json();
+      setFiles(data);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+    }
+  };
 
   const handleBack = () => {
     router.push('/');
-  }
+  };
 
-  // const fetchClassData = () => {
-  //   if (classData) {
-  //     let search = classData[4] + " " + String(classData[5]);
-  //     let url = `https://self-service-api-production.up.railway.app/search?query=${search}`;
-  //     console.log(url)
-  //     fetch(`https://self-service-api-production.up.railway.app/search?query=${search}`)
-  //       .then(response => response.json())
-  //       .then(returned_data => {
-  //         console.log(returned_data)
-  //         setSections(returned_data);
-  //       })
-  //       .catch(error => console.error('Error fetching data:', error));
-  //   }
-  // };
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setSelectedFile(file || null);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile || !classParam) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('classParam', classParam);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error uploading file');
+      }
+
+      const data = await response.json();
+      console.log('File uploaded successfully:', data.url);
+      fetchFiles(classParam);
+      setSelectedFile(null);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const handleFileDelete = async (key: string) => {
+    try {
+      const response = await fetch(`/api/deleteFile`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ key }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error deleting file');
+      }
+
+      console.log('File deleted successfully');
+      fetchFiles(classParam || '');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
+
+  const handleFileDownload = async (key: string, filename: string) => {
+    try {
+      // Extract just the key part from the full URL
+      const keyPart = key.split('.com/')[1];
+      const response = await fetch(`/api/getPresignedUrl?key=${encodeURIComponent(keyPart)}`);
+      if (!response.ok) {
+        throw new Error('Failed to get presigned URL');
+      }
+      const { url } = await response.json();
+      
+      // Use the presigned URL to download the file
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
 
   return (
-    <div>
-      <Button onClick={handleBack}>Back</Button>
-      <h1>Class Page</h1>
+    <div className="p-4">
+      <Button onClick={handleBack} className="mb-4">Back</Button>
+      <h1 className="text-2xl font-bold mb-4">Class Page</h1>
       {classData && !Array.isArray(classData[0]) ? (
-        <>
-          <p>Title: {classData[4] + " " + String(classData[5])}</p>
-          <p>Semester: {classData[2] + " " + String(classData[1])}</p>
-          <p>Name: {classData[6]}</p>
-          <p>Description: {classData[7]}</p>
-          <p>Credit Hours: {classData[8]}</p>
-          <p>Info: {classData[9]}</p>
-          <p>Average GPA: {classData[classData.length - 1]}</p>
-          
-          {/* <p>Sections:</p> */}
-
-          {/* {sectionsInfo.map((section, index) => (
-            <div key={index}>
-              <p>CRN: {section[0]}</p>
-              <p>Available: {section[4]}</p>
-              <p>Max: {section[5]}</p>
-              <p>Currently Enrolled: {section[6]}</p>
-              <br />
-            </div>
-          ))} */}
-
-        </>
+        <div className="mb-6">
+          <p><strong>Title:</strong> {classData[4] + ' ' + String(classData[5])}</p>
+          <p><strong>Semester:</strong> {classData[2] + ' ' + String(classData[1])}</p>
+          <p><strong>Name:</strong> {classData[6]}</p>
+          <p><strong>Description:</strong> {classData[7]}</p>
+          <p><strong>Credit Hours:</strong> {classData[8]}</p>
+          <p><strong>Info:</strong> {classData[9]}</p>
+          <p><strong>Average GPA:</strong> {classData[classData.length - 1]}</p>
+        </div>
       ) : (
         classData && (classData as ClassDataListType).map((classItem, index) => (
-          <div key={index}>
-            <p>Title: {classItem[4] + " " + String(classItem[5])}</p>
-            <p>Description: {classItem[7]}</p>
+          <div key={index} className="mb-4">
+            <p><strong>Title:</strong> {classItem[4] + ' ' + String(classItem[5])}</p>
+            <p><strong>Description:</strong> {classItem[7]}</p>
           </div>
         ))
       )}
-      {/* <pre>{JSON.stringify(classData, null, 2)}</pre> */}
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Student Files</h2>
+        <div className="mb-4">
+          <input type="file" onChange={handleFileChange} className="mr-2" />
+          <Button onClick={handleFileUpload} disabled={!selectedFile}>Upload</Button>
+        </div>
+        <ul className="space-y-2">
+          {files.map((file) => (
+            <li key={file.key} className="flex items-center space-x-2">
+              <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{file.key.split('/').pop()}</a>
+              <Button onClick={() => handleFileDelete(file.key)} className="bg-red-500 hover:bg-red-600 text-white">Delete</Button>
+              <Button onClick={() => handleFileDownload(file.url, file.key.split('/').pop() || 'download')} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

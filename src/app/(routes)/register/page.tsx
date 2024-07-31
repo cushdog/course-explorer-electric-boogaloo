@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -22,10 +24,10 @@ export default function Register() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-      <button type="submit">Register</button>
+      <Input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <Button type="submit">Register</Button>
     </form>
   );
 }
