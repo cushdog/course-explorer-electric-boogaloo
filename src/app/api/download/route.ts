@@ -1,11 +1,12 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { url } = req.query;
+export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get('url');
 
-    if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: 'Invalid URL' });
+    if (!url) {
+        return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
     try {
@@ -13,18 +14,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const contentType = response.headers.get('content-type');
         const contentDisposition = response.headers.get('content-disposition');
 
-        res.setHeader('Content-Type', contentType || 'application/octet-stream');
+        // Create a new Response object
+        const newResponse = new NextResponse(await response.text());
+
+        // Set headers
+        newResponse.headers.set('Content-Type', contentType || 'application/octet-stream');
         if (contentDisposition) {
-            res.setHeader('Content-Disposition', contentDisposition);
+            newResponse.headers.set('Content-Disposition', contentDisposition);
         }
 
-        if (response.body) {
-            response.body.pipe(res);
-        } else {
-            throw new Error('Response body is null');
-        }
+        return newResponse;
     } catch (error) {
         console.error('Error downloading file:', error);
-        res.status(500).json({ error: 'Error downloading file' });
+        return NextResponse.json({ error: 'Error downloading file' }, { status: 500 });
     }
 }
