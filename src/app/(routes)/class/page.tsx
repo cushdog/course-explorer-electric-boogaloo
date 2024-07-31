@@ -118,7 +118,31 @@ const ClassContent = () => {
     }
   };
 
+  const downloadFileFromUrl = (url: string, fileName: string) => {
+    const link = document.createElement('a');
+    link.setAttribute('href', url!);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   const handleFileDownload = async (key: string) => {
+    try {
+      const response = await fetch(`/api/getPresignedUrl?key=${encodeURIComponent(key)}`);
+      if (!response.ok) {
+        throw new Error('Failed to get presigned URL');
+      }
+      const { url } = await response.json();
+      const fileName = key.split('/').pop() || 'download';
+      downloadFileFromUrl(url, fileName);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+
+  const handleFilePreview = async (key: string) => {
     try {
       const response = await fetch(`/api/getPresignedUrl?key=${encodeURIComponent(key)}`);
       if (!response.ok) {
@@ -127,7 +151,7 @@ const ClassContent = () => {
       const { url } = await response.json();
       window.open(url, '_blank');
     } catch (error) {
-      console.error('Error downloading file:', error);
+      console.error('Error previewing file:', error);
     }
   };
 
@@ -162,9 +186,9 @@ const ClassContent = () => {
         <ul className="space-y-2">
           {files.map((file) => (
             <li key={file.key} className="flex items-center space-x-2">
-              <Button onClick={() => handleFileDownload(file.key)} className="text-blue-600 hover:underline">{file.key.split('/').pop()}</Button>
+              <Button onClick={() => handleFilePreview(file.key)} className="text-blue-600 hover:underline">{file.key.split('/').pop()}</Button>
               <Button onClick={() => handleFileDelete(file.key)} className="bg-red-500 hover:bg-red-600 text-white">Delete</Button>
-              <Button onClick={() => handleFileDownload(file.key, file.key.split('/').pop() || 'download')} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
+              <Button onClick={() => handleFileDownload(file.key)} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
             </li>
           ))}
         </ul>
