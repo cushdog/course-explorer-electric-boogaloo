@@ -55,6 +55,10 @@ import {
       router.push('/reviews');
     }
 
+    const handleFutureSearch = () => {
+      router.push('/futureSearch');
+    }
+
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -81,6 +85,11 @@ import {
               <Keyboard className="mr-2 h-4 w-4" />
               <span>Class Reviews</span>
               <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleFutureSearch}>
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Future Search</span>
+              <DropdownMenuShortcut>⌘L</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
