@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -16,7 +16,7 @@ const semesterConfigs = [
   { semester: "Fall", year: "2022" },
 ];
 
-const SubjectsPage: React.FC = () => {
+const SubjectsContent: React.FC = () => {
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<CourseData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -200,6 +200,14 @@ const SubjectsPage: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const SubjectsPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SubjectsContent />
+    </Suspense>
   );
 };
 
