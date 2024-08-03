@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 type CourseData = [
@@ -22,32 +22,68 @@ const SubjectsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const subjectParam = searchParams.get('subject');
 
   const handleBack = () => {
     router.push('/');
   };
 
-  useEffect(() => {
-    const fetchData = () => {
-      setIsLoading(true);
-      try {
-        const rawData = JSON.parse(sessionStorage.getItem('subjectData') as string);
-        if (rawData && Array.isArray(rawData)) {
-          setCourses(rawData);
-          setError(null);
-        } else {
-          throw new Error('Invalid data structure');
-        }
-      } catch (err) {
-        console.error('Error fetching subjects data:', err);
-        setError('Failed to load subjects data. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchSubjectDataWithDates = (subject: string, configIndex: number = 0) => {
+    if (configIndex >= semesterConfigs.length) {
+      console.log("All configurations tried, subject not found");
+      setError('Subject not found');
+      setIsLoading(false);
+      return;
+    }
 
-    fetchData();
-  }, []);
+    const { semester, year } = semesterConfigs[configIndex];
+    const modified_search = `${subject} ${semester} ${year}`;
+    console.log(`Fetching subject data: ${modified_search}`);
+
+    fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
+      .then(response => response.json())
+      .then(returned_data => {
+        if (returned_data === "Course not found") {
+          fetchSubjectDataWithDates(subject, configIndex + 1);
+        } else {
+          setCourses(returned_data);
+          sessionStorage.setItem('subjectData', JSON.stringify(returned_data));
+          setIsLoading(false);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        setError('Failed to fetch subject data. Please try again.');
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    if (subjectParam) {
+      fetchSubjectDataWithDates(subjectParam);
+    } else {
+      const fetchData = () => {
+        setIsLoading(true);
+        try {
+          const rawData = JSON.parse(sessionStorage.getItem('subjectData') as string);
+          if (rawData && Array.isArray(rawData)) {
+            setCourses(rawData);
+            setError(null);
+          } else {
+            throw new Error('Invalid data structure');
+          }
+        } catch (err) {
+          console.error('Error fetching subjects data:', err);
+          setError('Failed to load subjects data. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchData();
+    }
+  }, [subjectParam]);
 
   const fetchCoursesNoDate = (searchQuery: string, configIndex: number = 0) => {
     if (configIndex >= semesterConfigs.length) {
