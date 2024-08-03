@@ -4,6 +4,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
+import { useUser } from '@/context/UserContext';
+import { MdFavorite, MdFavoriteBorder } from "react-icons/md";
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
@@ -15,6 +17,8 @@ const ClassContent = () => {
   const [classData, setClassData] = useState<ClassDataType | ClassDataListType | null>(null);
   const [files, setFiles] = useState<{ key: string; url: string }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const { user } = useUser();
 
   const semesterConfigs = [
     { semester: 'Spring', year: '2024' },
@@ -27,8 +31,56 @@ const ClassContent = () => {
     if (classParam) {
       fetchClassDataWithDates(classParam);
       fetchFiles(classParam);
+      checkIfFavorited();
     }
   }, [classParam]);
+
+  const checkIfFavorited = async () => {
+    if (!user) return;
+  
+    try {
+      const url = `/api/user/${encodeURIComponent(user.email)}`;
+      console.log("Fetching URL:", url);
+      const response = await fetch(url);
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch user data: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+      console.log("Received data:", data);
+      setIsFavorited(data.favoritedClasses.includes(classParam));
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const handleFavoriteToggle = async () => {
+    if (!user) return;
+
+    try {
+      const method = isFavorited ? 'DELETE' : 'POST';
+      const response = await fetch(`/api/favoriteClass`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.email, classId: classParam }),
+      });
+
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${isFavorited ? 'unfavorite' : 'favorite'} class`);
+      }
+
+      const data = await response.json();
+      setIsFavorited(!isFavorited);
+      console.log(`Class ${isFavorited ? 'unfavorited' : 'favorited'}:`, data);
+    } catch (error) {
+      console.error(`Error ${isFavorited ? 'unfavoriting' : 'favoriting'} class:`, error);
+    }
+  };
 
   const fetchClassDataWithDates = (classQuery: string, configIndex: number = 0) => {
     if (configIndex >= semesterConfigs.length) {
@@ -170,6 +222,9 @@ const ClassContent = () => {
           </CardContent>
           <CardFooter>
             <p style={{ color: '#8E6C88' }}>Credit Hours: {classData[8]}</p>
+            <Button onClick={handleFavoriteToggle} className="ml-4 flex items-center">
+              {isFavorited ? <MdFavorite size={24} color="red" /> : <MdFavoriteBorder size={24} />}
+            </Button>
           </CardFooter>
         </Card>
       )}

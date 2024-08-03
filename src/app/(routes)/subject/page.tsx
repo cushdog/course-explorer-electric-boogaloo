@@ -1,24 +1,22 @@
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Define types
-type CourseData = {
-  0: number;  // id
-  1: number;  // year
-  2: string;  // term
-  3: string;  // termCode
-  4: string;  // subject
-  5: number;  // number
-  6: string;  // title
-  7: string;  // description
-  8: string;  // creditHours
-  9: string;  // detailedInfo
-  29: number | null;  // gpa
-};
+type CourseData = [
+  number, number, string, string, string, number, string, string, string, string,
+  null, null, number, string, string, string, null, string, string, string,
+  string, string, string, string, string, string, string, string, null, number
+];
 
-const FutureClassesPage: React.FC = () => {
-  const [futureClasses, setFutureClasses] = useState<CourseData[]>([]);
+const semesterConfigs = [
+  { semester: "Spring", year: "2024" },
+  { semester: "Fall", year: "2023" },
+  { semester: "Spring", year: "2023" },
+  { semester: "Fall", year: "2022" },
+];
+
+const SubjectsPage: React.FC = () => {
+  const [courses, setCourses] = useState<CourseData[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<CourseData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,15 +26,16 @@ const FutureClassesPage: React.FC = () => {
     const fetchData = () => {
       setIsLoading(true);
       try {
-        const data = JSON.parse(sessionStorage.getItem('futureData') || '[]');
-        if (!Array.isArray(data)) {
+        const rawData = JSON.parse(sessionStorage.getItem('subjectData') as string);
+        if (rawData && Array.isArray(rawData)) {
+          setCourses(rawData);
+          setError(null);
+        } else {
           throw new Error('Invalid data structure');
         }
-        setFutureClasses(data);
-        setError(null);
       } catch (err) {
-        console.error('Error fetching future classes data:', err);
-        setError('Failed to load future classes data. Please try again.');
+        console.error('Error fetching subjects data:', err);
+        setError('Failed to load subjects data. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -45,17 +44,43 @@ const FutureClassesPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const uniqueFutureClasses = useMemo(() => {
-    const uniqueCoursesSet = new Set();
-    return futureClasses.filter(course => {
-      const courseKey = `${course[4]}${course[5]}`; // subject + number
-      if (!uniqueCoursesSet.has(courseKey)) {
-        uniqueCoursesSet.add(courseKey);
-        return true;
-      }
-      return false;
-    });
-  }, [futureClasses]);
+  const fetchCoursesNoDate = (searchQuery: string, configIndex: number = 0) => {
+    if (configIndex >= semesterConfigs.length) {
+      console.log("All configurations tried, course or subject not found");
+      setError('Course or subject not found');
+      return;
+    }
+  
+    const isSubjectSearch = !searchQuery.includes(' ');
+  
+    if (!isSubjectSearch) {
+      searchQuery = searchQuery.replace(/([a-zA-Z])(\d)/, '$1 $2');
+    }
+  
+    const { semester, year } = semesterConfigs[configIndex];
+    const modified_search = `${searchQuery} ${semester} ${year}`;
+    console.log(`Fetching without date: ${modified_search}`);
+  
+    fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
+      .then(response => response.json())
+      .then(returned_data => {
+        if (returned_data === "Course not found") {
+          fetchCoursesNoDate(searchQuery, configIndex + 1);
+        } else {
+          if (isSubjectSearch) {
+            sessionStorage.setItem('subjectData', JSON.stringify(returned_data));
+            router.push(`/subject?subject=${searchQuery}`);
+          } else {
+            sessionStorage.setItem('classData', JSON.stringify(returned_data));
+            router.push(`/class?class=${searchQuery}+${semester}+${year}`);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        setError('Failed to fetch course data. Please try again.');
+      });
+  };
 
   const renderCourseCard = (course: CourseData) => (
     <div
@@ -82,7 +107,7 @@ const FutureClassesPage: React.FC = () => {
       )}
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-        onClick={() => router.push(`/course/${course[0]}`)}
+        onClick={() => fetchCoursesNoDate(`${course[4]} ${course[5]}`)}
       >
         View Course Details
       </button>
@@ -90,7 +115,7 @@ const FutureClassesPage: React.FC = () => {
   );
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading future classes...</div>;
+    return <div className="text-center py-8">Loading courses...</div>;
   }
 
   if (error) {
@@ -107,19 +132,19 @@ const FutureClassesPage: React.FC = () => {
     );
   }
 
-  if (uniqueFutureClasses.length === 0) {
-    return <div className="text-center py-8">No future classes available.</div>;
+  if (courses.length === 0) {
+    return <div className="text-center py-8">No courses available.</div>;
   }
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">
-        Future Classes
+        Courses
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {uniqueFutureClasses.map(renderCourseCard)}
+            {courses.map(renderCourseCard)}
           </div>
         </div>
         <div className="lg:col-span-1">
@@ -136,4 +161,4 @@ const FutureClassesPage: React.FC = () => {
   );
 };
 
-export default FutureClassesPage;
+export default SubjectsPage;

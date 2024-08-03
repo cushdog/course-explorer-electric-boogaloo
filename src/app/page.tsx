@@ -43,24 +43,37 @@ export default function SearchPage() {
 
   const fetchCoursesNoDate = (searchQuery: string, configIndex: number = 0) => {
     if (configIndex >= semesterConfigs.length) {
-      console.log("All configurations tried, course not found");
+      console.log("All configurations tried, course or subject not found");
       return;
     }
-
-    searchQuery = searchQuery.replace(/([a-zA-Z])(\d)/, '$1 $2');
-
+  
+    // Check if the search query is a subject (e.g., "CS") or a class (e.g., "CS 124")
+    const isSubjectSearch = !searchQuery.includes(' ');
+  
+    if (!isSubjectSearch) {
+      // If it's a class search, ensure there's a space between letters and numbers
+      searchQuery = searchQuery.replace(/([a-zA-Z])(\d)/, '$1 $2');
+    }
+  
     const { semester, year } = semesterConfigs[configIndex];
     const modified_search = `${searchQuery} ${semester} ${year}`;
     console.log(`Fetching without date: ${modified_search}`);
-
+  
     fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
       .then(response => response.json())
       .then(returned_data => {
         if (returned_data === "Course not found") {
           fetchCoursesNoDate(searchQuery, configIndex + 1);
         } else {
-          sessionStorage.setItem('classData', JSON.stringify(returned_data));
-          router.push(`/class?class=${searchQuery}`);
+          if (isSubjectSearch) {
+            // For subject search, store the data and redirect to the subject page
+            sessionStorage.setItem('subjectData', JSON.stringify(returned_data));
+            router.push(`/subject?subject=${searchQuery}`);
+          } else {
+            // For class search, store the data and redirect to the class page
+            sessionStorage.setItem('classData', JSON.stringify(returned_data));
+            router.push(`/class?class=${searchQuery}`);
+          }
         }
       })
       .catch(error => console.error('Error fetching data:', error));
