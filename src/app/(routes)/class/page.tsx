@@ -114,7 +114,11 @@ const ClassContent = () => {
   };
 
   const handleBack = () => {
-    router.push('/');
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
