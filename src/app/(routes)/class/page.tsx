@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Table, TableCaption, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
@@ -160,21 +161,46 @@ const ClassContent = () => {
       <Button onClick={handleBack} className="mb-4">Back</Button>
       <h1 className="text-2xl font-bold mb-4">Class Page</h1>
       {classData && !Array.isArray(classData[0]) ? (
-        <div className="mb-6">
-          <p><strong>Title:</strong> {classData[4] + ' ' + String(classData[5])}</p>
-          <p><strong>Semester:</strong> {classData[2] + ' ' + String(classData[1])}</p>
-          <p><strong>Name:</strong> {classData[6]}</p>
-          <p><strong>Description:</strong> {classData[7]}</p>
-          <p><strong>Credit Hours:</strong> {classData[8]}</p>
-          <p><strong>Info:</strong> {classData[9]}</p>
-          <p><strong>Average GPA:</strong> {classData[classData.length - 1]}</p>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px] text-black font-bold">Title</TableHead>
+              <TableHead className="text-black font-bold">Semester</TableHead>
+              <TableHead className="text-black font-bold">Name</TableHead>
+              <TableHead className="text-black font-bold">Description</TableHead>
+              <TableHead className="text-black font-bold">Credit Hours</TableHead>
+              <TableHead className="text-black font-bold">Info</TableHead>
+              <TableHead className="text-black font-bold">Average GPA</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">{classData[4]} {String(classData[5])}</TableCell>
+              <TableCell>{classData[2]} {String(classData[1])}</TableCell>
+              <TableCell>{classData[6]}</TableCell>
+              <TableCell>{classData[7]}</TableCell>
+              <TableCell>{classData[8]}</TableCell>
+              <TableCell>{classData[9]}</TableCell>
+              <TableCell>{classData[classData.length - 1]}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       ) : (
         classData && (classData as ClassDataListType).map((classItem, index) => (
-          <div key={index} className="mb-4">
-            <p><strong>Title:</strong> {classItem[4] + ' ' + String(classItem[5])}</p>
-            <p><strong>Description:</strong> {classItem[7]}</p>
-          </div>
+          <Table key={index}>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px] text-black font-bold">Title</TableHead>
+                <TableHead className="text-black font-bold">Description</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium">{classItem[4]} {String(classItem[5])}</TableCell>
+                <TableCell>{classItem[7]}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         ))
       )}
       <div>
