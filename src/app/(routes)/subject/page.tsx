@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 type CourseData = [
   number, number, string, string, string, number, string, string, string, string,
@@ -21,6 +22,10 @@ const SubjectsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  const handleBack = () => {
+    router.push('/');
+  };
 
   useEffect(() => {
     const fetchData = () => {
@@ -85,25 +90,25 @@ const SubjectsPage: React.FC = () => {
   const renderCourseCard = (course: CourseData) => (
     <div
       key={`${course[4]}${course[5]}`}
-      className="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+      className="bg-[#ABD1B5] p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow text-[#8E6C88]"
       onClick={() => setSelectedCourse(course)}
     >
       <h2 className="text-xl font-semibold mb-2">{course[4]} {course[5]}</h2>
       <h3 className="text-lg mb-2">{course[6]}</h3>
-      <p className="text-sm text-gray-600 mb-2">{course[8]}</p>
-      <p className="text-sm text-gray-500 truncate">{course[7].substring(0, 100)}...</p>
+      <p className="text-sm mb-2">{course[8]}</p>
+      <p className="text-sm truncate">{course[7].substring(0, 100)}...</p>
     </div>
   );
 
   const renderCourseDetails = (course: CourseData) => (
-    <div className="bg-white p-4 rounded-lg shadow-md sticky top-4">
+    <div className="bg-[#ABD1B5] p-4 rounded-lg shadow-md sticky top-4 text-[#8E6C88]">
       <h2 className="text-2xl font-semibold mb-2">{course[4]} {course[5]}</h2>
       <h3 className="text-xl mb-2">{course[6]}</h3>
-      <p className="text-gray-600 mb-2">{course[8]}</p>
-      <p className="text-gray-700 mb-4">{course[7]}</p>
-      <p className="text-sm text-gray-600 mb-2">Term: {course[2]} {course[1]}</p>
+      <p className="mb-2">{course[8]}</p>
+      <p className="mb-4">{course[7]}</p>
+      <p className="text-sm mb-2">Term: {course[2]} {course[1]}</p>
       {course[29] !== null && (
-        <p className="text-sm text-gray-600 mb-4">Average GPA: {course[29].toFixed(2)}</p>
+        <p className="text-sm mb-4">Average GPA: {course[29].toFixed(2)}</p>
       )}
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
@@ -138,7 +143,8 @@ const SubjectsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">
+      <Button onClick={handleBack} className="mb-4">Back</Button>
+      <h1 className="text-3xl font-bold mb-6 text-[#000000]">
         Courses
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -151,7 +157,7 @@ const SubjectsPage: React.FC = () => {
           {selectedCourse ? (
             renderCourseDetails(selectedCourse)
           ) : (
-            <div className="bg-gray-100 p-4 rounded-lg text-center">
+            <div className="bg-[#ABD1B5] p-4 rounded-lg text-center text-[#8E6C88]">
               Select a course to view details
             </div>
           )}
