@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Table, TableCaption, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
@@ -159,49 +159,19 @@ const ClassContent = () => {
   return (
     <div className="p-4">
       <Button onClick={handleBack} className="mb-4">Back</Button>
-      <h1 className="text-2xl font-bold mb-4">Class Page</h1>
-      {classData && !Array.isArray(classData[0]) ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px] text-black font-bold">Title</TableHead>
-              <TableHead className="text-black font-bold">Semester</TableHead>
-              <TableHead className="text-black font-bold">Name</TableHead>
-              <TableHead className="text-black font-bold">Description</TableHead>
-              <TableHead className="text-black font-bold">Credit Hours</TableHead>
-              <TableHead className="text-black font-bold">Info</TableHead>
-              <TableHead className="text-black font-bold">Average GPA</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">{classData[4]} {String(classData[5])}</TableCell>
-              <TableCell>{classData[2]} {String(classData[1])}</TableCell>
-              <TableCell>{classData[6]}</TableCell>
-              <TableCell>{classData[7]}</TableCell>
-              <TableCell>{classData[8]}</TableCell>
-              <TableCell>{classData[9]}</TableCell>
-              <TableCell>{classData[classData.length - 1]}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      ) : (
-        classData && (classData as ClassDataListType).map((classItem, index) => (
-          <Table key={index}>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px] text-black font-bold">Title</TableHead>
-                <TableHead className="text-black font-bold">Description</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="font-medium">{classItem[4]} {String(classItem[5])}</TableCell>
-                <TableCell>{classItem[7]}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        ))
+      {classData && (
+        <Card style={{ backgroundColor: '#ABD1B5' }}>
+          <CardHeader>
+            <CardTitle style={{ color: '#8E6C88' }}>{classData[4] + ' ' + String(classData[5])}</CardTitle>
+            <CardDescription style={{ color: '#8E6C88' }}>{classData[2] + ' ' + String(classData[1])}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p style={{ color: '#8E6C88' }}>{classData[7]}</p>
+          </CardContent>
+          <CardFooter>
+            <p style={{ color: '#8E6C88' }}>Credit Hours: {classData[8]}</p>
+          </CardFooter>
+        </Card>
       )}
       <div>
         <h2 className="text-xl font-semibold mb-2">Student Files</h2>
@@ -212,7 +182,7 @@ const ClassContent = () => {
         <ul className="space-y-2">
           {files.map((file) => (
             <li key={file.key} className="flex items-center space-x-2">
-              <Button onClick={() => handleFilePreview(file.key)} className="text-blue-600 hover:underline">{file.key.split('/').pop()}</Button>
+              <Button onClick={() => handleFilePreview(file.key)}>{file.key.split('/').pop()}</Button>
               <Button onClick={() => handleFileDelete(file.key)} className="bg-red-500 hover:bg-red-600 text-white">Delete</Button>
               <Button onClick={() => handleFileDownload(file.key)} className="bg-green-500 hover:bg-green-600 text-white">Download</Button>
             </li>
