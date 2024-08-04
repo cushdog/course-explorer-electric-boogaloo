@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
 import { useUser } from '@/context/UserContext';
 import { MdFavorite, MdFavoriteBorder } from "react-icons/md";
+import ReviewForm from '../../../../components/custom/review_form/review_form';
+import ReviewList from '../../../../components/custom/review_list/review_list';
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
@@ -19,6 +21,27 @@ const ClassContent = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const { user } = useUser();
+  const course_code = classData?.[4] + ' ' + String(classData?.[5]);
+
+  const [reviews, setReviews] = useState([]);
+
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch(`/api/reviews?classId=${course_code}`);
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+      } else {
+        console.error('Failed to fetch reviews');
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [course_code]);
 
   const semesterConfigs = [
     { semester: 'Spring', year: '2024' },
@@ -212,6 +235,10 @@ const ClassContent = () => {
     }
   };
 
+  if (!user?.email) {
+    return <div>Please log in to leave a review</div>
+  }
+
   return (
     <div className="p-4">
       <Button onClick={handleBack} className="mb-4">Back</Button>
@@ -248,6 +275,13 @@ const ClassContent = () => {
           ))}
         </ul>
       </div>
+      <h2 className="text-xl font-semibold mb-2">Leave a review or tip</h2>
+      <ReviewForm 
+        classId={course_code}
+        studentEmail={user.email}
+        onReviewSubmitted={() => { fetchReviews(); }}
+      />
+      <ReviewList reviews={reviews} />
     </div>
   );
 };
