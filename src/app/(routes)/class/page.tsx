@@ -8,9 +8,25 @@ import { useUser } from '@/context/UserContext';
 import { MdFavorite, MdFavoriteBorder } from "react-icons/md";
 import ReviewForm from '../../../../components/custom/review_form/review_form';
 import ReviewList from '../../../../components/custom/review_list/review_list';
+import SectionList from '../../../../components/custom/section_list/section_list';
+import { Section } from 'lucide-react';
 
 type ClassDataType = (string | number | null)[];
 type ClassDataListType = ClassDataType[];
+
+interface Section {
+  sectionId: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  type: string;
+  startTime: string;
+  endTime: string;
+  daysOfWeek: string;
+  roomNumber: string;
+  building: string;
+  instructor: string;
+}
 
 const ClassContent = () => {
   const router = useRouter();
@@ -21,6 +37,7 @@ const ClassContent = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const { user } = useUser();
+  const [sections, setSections] = useState<Section[][]>([]);
   const course_code = classData?.[4] + ' ' + String(classData?.[5]);
 
   const [reviews, setReviews] = useState([]);
@@ -39,11 +56,55 @@ const ClassContent = () => {
     }
   };
 
+  async function fetchAndProcessSections(subject: string, courseNumber: string, semester: string, year: string): Promise<Section[][]> {
+
+    const url = `https://uiuc-course-api-production.up.railway.app/sections?query=${subject}+${courseNumber}+${semester}+${year}`;
+  
+    console.log('Fetching sections:', url);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: any[][] = await response.json();
+  
+      const processedSections: Section[][] = data.map(section => {
+        // Remove the first 7 elements (class details)
+        const sectionDetails = section;
+  
+        // Filter out null values and create a Section object
+        const filteredSection: Section = {
+          sectionId: sectionDetails[7] as string,
+          status: sectionDetails[8] as string,
+          startDate: sectionDetails[13] as string,
+          endDate: sectionDetails[14] as string,
+          type: sectionDetails[15] as string,
+          startTime: sectionDetails[16] as string,
+          endTime: sectionDetails[17] as string,
+          daysOfWeek: sectionDetails[18] as string,
+          roomNumber: sectionDetails[19] as string,
+          building: sectionDetails[20] as string,
+          instructor: sectionDetails[21] as string
+        };
+  
+        // Remove any properties that are null
+  
+        return [filteredSection];
+      });
+
+      return processedSections;
+    } catch (error) {
+      console.error('Error fetching section data:', error);
+      return [];
+    }
+  }
+
   useEffect(() => {
     fetchReviews();
   }, [course_code]);
 
   const semesterConfigs = [
+    { semester: 'Fall', year: '2024' },
     { semester: 'Spring', year: '2024' },
     { semester: 'Fall', year: '2023' },
     { semester: 'Spring', year: '2023' },
@@ -112,15 +173,32 @@ const ClassContent = () => {
     }
 
     const { semester, year } = semesterConfigs[configIndex];
-    const modified_search = `${classQuery} ${semester} ${year}`;
+    const modified_search = `${classQuery} ${semester.toLowerCase()} ${year}`;
 
-    fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
+    const encodedSearch = encodeURIComponent(modified_search);
+    let url = `https://uiuc-course-api-production.up.railway.app/search?query=${encodedSearch}`;
+
+    fetch(url)
       .then((response) => response.json())
       .then((data) => {
         if (data === 'Course not found') {
           fetchClassDataWithDates(classQuery, configIndex + 1);
         } else {
           setClassData(data);
+
+          // Assuming classData is in the format [year, semester, subject, courseNumber, ...]
+          const subject = data[2];
+          const courseNumber = data[3];
+          const semester = String(data[1]).toLowerCase();
+          const year = String(data[0]);
+          fetchAndProcessSections(subject, courseNumber, semester, year)
+          .then(fetchedSections => {
+            setSections(fetchedSections);
+          })
+          .catch(error => {
+            console.error('Error fetching sections:', error);
+          });
+
         }
       })
       .catch((error) => console.error('Error fetching class data:', error));
@@ -235,6 +313,10 @@ const ClassContent = () => {
     }
   };
 
+  function capitalizeFirstLetter(string: string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
   if (!user?.email) {
     return <div>Please log in to leave a review</div>
   }
@@ -245,20 +327,22 @@ const ClassContent = () => {
       {classData && (
         <Card style={{ backgroundColor: '#ABD1B5' }}>
           <CardHeader>
-            <CardTitle style={{ color: '#8E6C88' }}>{classData[4] + ' ' + String(classData[5])}</CardTitle>
-            <CardDescription style={{ color: '#8E6C88' }}>{classData[2] + ' ' + String(classData[1])}</CardDescription>
+            <CardTitle style={{ color: '#8E6C88' }}>{classData[2] + ' ' + String(classData[3])}</CardTitle>
+            <CardDescription style={{ color: '#8E6C88' }}>{capitalizeFirstLetter(String(classData[1])) + ' ' + String(classData[0])}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p style={{ color: '#8E6C88' }}>{classData[7]}</p>
+            <p style={{ color: '#8E6C88' }}>{classData[5]}</p>
           </CardContent>
           <CardFooter>
-            <p style={{ color: '#8E6C88' }}>Credit Hours: {classData[8]}</p>
+            <p style={{ color: '#8E6C88' }}>Credit Hours: {classData[6]}</p>
             <Button onClick={handleFavoriteToggle} className="ml-4 flex items-center">
               {isFavorited ? <MdFavorite size={24} color="red" /> : <MdFavoriteBorder size={24} />}
             </Button>
           </CardFooter>
         </Card>
       )}
+      <h2 className="text-xl font-semibold mb-2">Sections</h2>
+      <SectionList sections={sections} />
       <div>
         <h2 className="text-xl font-semibold mb-2">Student Files</h2>
         <div className="mb-4">

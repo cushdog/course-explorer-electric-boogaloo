@@ -17,6 +17,7 @@ export default function SearchPage() {
   const { user, setUser } = useUser();
 
   const semesterConfigs = [
+    { semester: "Fall", year: "2024" },
     { semester: "Spring", year: "2024" },
     { semester: "Fall", year: "2023" },
     { semester: "Spring", year: "2023" },
@@ -56,10 +57,15 @@ export default function SearchPage() {
     }
   
     const { semester, year } = semesterConfigs[configIndex];
-    const modified_search = `${searchQuery} ${semester} ${year}`;
+    const modified_search = `${searchQuery} ${semester.toLowerCase()} ${year}`;
     console.log(`Fetching without date: ${modified_search}`);
+
+    const encodedSearch = encodeURIComponent(modified_search);
+    let url = `https://uiuc-course-api-production.up.railway.app/search?query=${encodedSearch}`;
+
+    console.log(url)
   
-    fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
+    fetch(url)
       .then(response => response.json())
       .then(returned_data => {
         if (returned_data === "Course not found") {
@@ -80,7 +86,7 @@ export default function SearchPage() {
   };
 
   const fetchCoursesDate = (searchQuery: string, semester: string, year: string) => {
-    const modified_search = `${searchQuery} ${selectedSemester} ${selectedYear}`;
+    const modified_search = `${searchQuery} ${selectedSemester.toLowerCase()} ${selectedYear}`;
     console.log(`Fetching with date: ${modified_search}`);
     fetch(`https://uiuc-course-api-production.up.railway.app/search?query=${modified_search}`)
       .then(response => response.json())
